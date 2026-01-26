@@ -4,7 +4,7 @@ export const getIntroductionMessage = async (
   _: unknown,
   args: { name: string },
 ) => {
-  await delay(1000); // Simulate a delay of 1 second
+  await delay(1000);
 
   return {
     message: `Hello, ${args.name}! Welcome to our GraphQL API.`,

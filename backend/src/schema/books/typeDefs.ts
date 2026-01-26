@@ -1,0 +1,34 @@
+export const bookSchemaTypeDefs = `
+    type Query {
+      getBooks(id: ID): [Book!]!
+    }
+
+    type Mutation {
+      createBook(input: CreateBookInput!): Book!
+      updateBook(input: UpdateBookInput!): Book!
+      deleteBook(input: DeleteBookInput!): Book!
+    }
+
+    type Book {
+      id: ID!
+      title: String!
+      author: String!
+      createdAt: String!
+      updatedAt: String!
+    }
+
+    input CreateBookInput {
+        title: String!
+        author: String!
+    }
+
+    input UpdateBookInput {
+        id: ID!
+        title: String
+        author: String
+    }
+
+    input DeleteBookInput {
+      id: ID!
+    }
+`;

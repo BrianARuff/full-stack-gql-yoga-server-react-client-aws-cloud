@@ -2,13 +2,14 @@ import { DeleteCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { GraphQLError, GraphQLFieldResolver } from "graphql";
 import { Context } from "../../..";
 import { DDB_TABLE_NAMES } from "../../../database";
-import { MutationDeleteBookArgs } from "../../../types";
+import { createAppError } from "../../../utils";
+import { MutationDeleteBookArgs } from "../types";
 
 export const deleteBook: GraphQLFieldResolver<
   any,
   Context,
   MutationDeleteBookArgs
-> = async (_parent, args, context): Promise<any> => {
+> = async (_parent, args, context, info): Promise<any> => {
   try {
     const queryResult = await context.ddb.send(
       new QueryCommand({
@@ -21,14 +22,14 @@ export const deleteBook: GraphQLFieldResolver<
     );
 
     if (!queryResult.Items || queryResult.Items.length === 0) {
-      throw new GraphQLError("Book not found", {
-        extensions: { code: "NOT_FOUND" },
+      throw createAppError("Book not found", {
+        code: "NOT_FOUND",
       });
     }
 
     if (queryResult.Items.length > 1) {
-      throw new GraphQLError("Multiple books found for id", {
-        extensions: { code: "CONFLICT" },
+      throw createAppError("Multiple books found for id", {
+        code: "CONFLICT",
       });
     }
 
@@ -43,11 +44,12 @@ export const deleteBook: GraphQLFieldResolver<
 
     return deletedBook;
   } catch (error) {
-    throw new GraphQLError("Failed to delete book", {
-      extensions: {
-        code: "INTERNAL_SERVER_ERROR",
-        error,
-      },
+    if (error instanceof GraphQLError) {
+      throw error;
+    }
+
+    throw createAppError("Failed to delete book", {
+      code: "INTERNAL_SERVER_ERROR",
     });
   }
 };

@@ -90,8 +90,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       });
 
       cognitoUser.authenticateUser(authDetails, {
-        onSuccess: (session) => {
-          console.log("Authentication successful:", session);
+        onSuccess: (_session) => {
           setIsAuthenticated(true);
           setUser(cognitoUser);
           setUserError(null);
@@ -158,11 +157,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             setUserError(err.message || "Registration failed");
             reject(err);
           } else {
-            console.log("User registered:", result?.user.getUsername());
             if (result?.user) {
               setPendingUser(result.user);
             }
-            console.log("result?.user", result?.user);
+
             resolve();
           }
         },

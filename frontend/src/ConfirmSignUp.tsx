@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { ErrorMessage } from "./ErrorMessage";
 import { Loader } from "./Loader";
 
 type ConfirmSignUpProps = {
@@ -14,7 +15,7 @@ export const ConfirmSignUp = ({
 }: ConfirmSignUpProps) => {
   const [searchParams] = useSearchParams();
   const [username, setUsername] = useState(
-    initialUsername || searchParams.get("username") || "",
+    initialUsername ?? searchParams.get("username") ?? "",
   );
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -32,37 +33,52 @@ export const ConfirmSignUp = ({
 
   useEffect(() => {
     setUserError(null);
-  }, []);
+  }, [setUserError]);
 
-  const handleOnSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSuccessMessage("");
-    setInfoMessage("");
-    setIsLoading(true);
+  const handleOnSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setSuccessMessage("");
+      setInfoMessage("");
 
-    try {
-      await confirmSignUp(username, code);
-      setSuccessMessage("Account verified! Please log in.");
-      await onVerified?.();
-    } catch (error: unknown) {
-      const cognitoError = error as { code?: string; message?: string };
-      if (
-        cognitoError.code === "NotAuthorizedException" ||
-        cognitoError.message?.includes("Current status is CONFIRMED")
-      ) {
-        setSuccessMessage("Account is already verified. Please log in.");
-        await onVerified?.();
-      } else {
-        console.error("Confirmation failed:", error);
-        document.querySelector<HTMLInputElement>("#code")?.focus();
+      if (!username.trim()) {
+        setUserError("Username is required");
+        return;
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleResendCode = async () => {
-    if (!username) {
+      if (!code.trim()) {
+        setUserError("Verification code is required");
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        await confirmSignUp(username, code);
+        setSuccessMessage("Account verified! Please log in.");
+        await onVerified?.();
+      } catch (error: unknown) {
+        const cognitoError = error as { code?: string; message?: string };
+        if (
+          cognitoError.code === "NotAuthorizedException" ||
+          cognitoError.message?.includes("Current status is CONFIRMED")
+        ) {
+          setSuccessMessage("Account is already verified. Please log in.");
+          await onVerified?.();
+        } else {
+          console.error("Confirmation failed:", error);
+          document.querySelector<HTMLInputElement>("#code")?.focus();
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [username, code, confirmSignUp, onVerified, setUserError],
+  );
+
+  const handleResendCode = useCallback(async () => {
+    if (!username.trim()) {
+      setUserError("Username is required to resend code");
       return;
     }
 
@@ -78,11 +94,11 @@ export const ConfirmSignUp = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [username, resendConfirmationCode, setUserError]);
 
   return (
     <div>
-      {isLoading ? <Loader /> : null}
+      {isLoading && <Loader />}
 
       <h1 className="title-text">Verify Your Account</h1>
 
@@ -90,15 +106,17 @@ export const ConfirmSignUp = ({
         Please enter the verification code sent to your email.
       </p>
 
-      <form onSubmit={handleOnSubmit}>
+      <form onSubmit={handleOnSubmit} noValidate>
         <label htmlFor="username">Username</label>
         <input
           id="username"
           type="text"
           placeholder="Username"
           value={username}
+          autoComplete="username"
           className={userError ? "input-error" : ""}
           onChange={(e) => setUsername(e.target.value)}
+          disabled={isLoading}
           required
         />
 
@@ -106,27 +124,33 @@ export const ConfirmSignUp = ({
         <input
           id="code"
           type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
           placeholder="Enter code"
           value={code}
+          autoComplete="one-time-code"
           className={userError ? "input-error" : ""}
           onChange={(e) => setCode(e.target.value)}
+          disabled={isLoading}
           required
         />
 
-        <button type="submit">Verify Account</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? "Verifying..." : "Verify Account"}
+        </button>
       </form>
 
       <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-        <button type="button" onClick={handleResendCode} disabled={!username}>
+        <button
+          type="button"
+          onClick={handleResendCode}
+          disabled={!username.trim() || isLoading}
+        >
           Resend Code
         </button>
       </div>
 
-      {userError && (
-        <p aria-live="assertive" aria-atomic="true" className="error-message">
-          {userError}
-        </p>
-      )}
+      {userError && <ErrorMessage message={userError} />}
 
       {successMessage && (
         <p aria-live="polite" className="success-message">

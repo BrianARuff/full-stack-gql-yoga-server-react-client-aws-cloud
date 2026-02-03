@@ -1,32 +1,69 @@
-import { GraphQLError } from "graphql/error";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import { Context } from "..";
-import { getRequiredEnv } from "../utils";
+import { createAppError, getRequiredEnv } from "../utils";
 
-export const requireAdminGroup = (token: string) => {
+interface CognitoToken extends JwtPayload {
+  "cognito:groups"?: string[];
+  "cognito:username"?: string;
+  email?: string;
+  sub?: string;
+}
+
+export const requireAdminGroup = (token: string): CognitoToken => {
   if (!token) {
-    throw new GraphQLError("Authorization token missing", {
-      extensions: { code: "UNAUTHENTICATED" },
+    throw createAppError("Authorization token missing", {
+      code: "UNAUTHENTICATED",
     });
   }
 
-  const decodedToken = jwt.decode(token);
-  //   @ts-ignore
+  let decodedToken: CognitoToken | null;
+
+  try {
+    decodedToken = jwt.decode(token) as CognitoToken | null;
+  } catch {
+    throw createAppError("Invalid token format", {
+      code: "UNAUTHENTICATED",
+    });
+  }
+
+  if (!decodedToken) {
+    throw createAppError("Invalid token", {
+      code: "UNAUTHENTICATED",
+    });
+  }
+
+  // Check token expiration
+  if (decodedToken.exp && Date.now() >= decodedToken.exp * 1000) {
+    throw createAppError("Token expired", {
+      code: "UNAUTHENTICATED",
+    });
+  }
+
   const userGroups = decodedToken["cognito:groups"] || [];
-  const isAdmin = userGroups.includes(
-    getRequiredEnv("AWS_COGNITO_USER_POOL_GROUP_NAME"),
-  );
+  const requiredGroup = getRequiredEnv("AWS_COGNITO_USER_POOL_GROUP_NAME");
+  const isAdmin = userGroups.includes(requiredGroup);
 
   if (!isAdmin) {
-    throw new GraphQLError("Admin privileges required", {
-      extensions: { code: "FORBIDDEN" },
-    });
+    const errors = [
+      createAppError("Admin privileges required", {
+        code: "FORBIDDEN",
+      }),
+      createAppError(
+        userGroups.length === 0
+          ? "User is not assigned to any groups"
+          : `User groups [${userGroups.join(", ")}] do not include required group`,
+        {
+          code: "FORBIDDEN",
+        },
+      ),
+    ];
+
+    throw new AggregateError(errors);
   }
 
-  return decodedToken; // Return decoded token for further use
+  return decodedToken;
 };
 
-export const extractToken = (context: Context) => {
-  // @ts-ignore
-  return context.request.headers.authorization?.replace("Bearer ", "");
+export const extractToken = (context: Context): string | undefined => {
+  return context.request.headers.get("authorization")?.replace("Bearer ", "");
 };

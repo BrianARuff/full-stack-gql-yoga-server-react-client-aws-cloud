@@ -6,20 +6,21 @@ import {
 import { GraphQLError, GraphQLFieldResolver } from "graphql";
 import { Context } from "../../..";
 import { DDB_TABLE_NAMES } from "../../../database";
-import { Book, MutationUpdateBookArgs } from "../../../types";
+import { createAppError } from "../../../utils";
+import { Book, MutationUpdateBookArgs } from "../types";
 
 export const updateBook: GraphQLFieldResolver<
   any,
   Context,
   MutationUpdateBookArgs
-> = async (_parent: any, args, context, _info: any) => {
+> = async (_parent, args, context, info) => {
   try {
     const now = new Date().toISOString();
     const { id, title, author } = args.input as any;
 
     if (typeof title !== "string" && typeof author !== "string") {
-      throw new GraphQLError("No fields to update", {
-        extensions: { code: "BAD_USER_INPUT" },
+      throw createAppError("No fields to update", {
+        code: "BAD_USER_INPUT",
       });
     }
 
@@ -34,8 +35,8 @@ export const updateBook: GraphQLFieldResolver<
     );
 
     if (!queryResult.Items || queryResult.Items.length === 0) {
-      throw new GraphQLError("Book not found", {
-        extensions: { code: "NOT_FOUND" },
+      throw createAppError("Book not found", {
+        code: "NOT_FOUND",
       });
     }
 
@@ -110,11 +111,8 @@ export const updateBook: GraphQLFieldResolver<
       throw error;
     }
 
-    throw new GraphQLError("Failed to update book", {
-      extensions: {
-        code: "INTERNAL_SERVER_ERROR",
-        error,
-      },
+    throw createAppError("Failed to update book", {
+      code: "INTERNAL_SERVER_ERROR",
     });
   }
 };

@@ -1,6 +1,6 @@
-import { GraphQLError } from "graphql/error";
 import { Context } from "../..";
 import { addUserToAdminGroup } from "../../auth/addUserToAdminGroup";
+import { createAppError } from "../../utils";
 
 export const createAdminUserTypeDefs = `
     type Mutation {
@@ -15,8 +15,8 @@ export const createAdminUser = (
   _info: any,
 ) => {
   if (!args?.username?.trim?.()) {
-    throw new GraphQLError("Username is required", {
-      extensions: { code: "BAD_USER_INPUT" },
+    throw createAppError("Username is required", {
+      code: "BAD_USER_INPUT",
     });
   }
 

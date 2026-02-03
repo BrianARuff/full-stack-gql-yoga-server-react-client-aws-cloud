@@ -2,14 +2,15 @@ import { QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { GraphQLError, GraphQLFieldResolver } from "graphql";
 import { Context } from "../../..";
 import { DDB_TABLE_NAMES } from "../../../database";
-import { Query } from "../../../types";
+import { createAppError } from "../../../utils";
+import { GetBooksData } from "../types";
 
-export const getBooks: GraphQLFieldResolver<any, any, any> = async (
-  _parent: any,
-  args: any,
-  context: Context,
-  _info: any,
-): Promise<Query["getBooks"]> => {
+export const getBooks: GraphQLFieldResolver<any, Context, any> = async (
+  _parent,
+  args,
+  context,
+  _info,
+): Promise<GetBooksData["getBooks"]> => {
   try {
     // single when ID provided
     if (args.id) {
@@ -22,7 +23,7 @@ export const getBooks: GraphQLFieldResolver<any, any, any> = async (
         }),
       );
 
-      return (result.Items ?? []) as Query["getBooks"];
+      return (result.Items ?? []) as GetBooksData["getBooks"];
     }
 
     // all books when no ID provided
@@ -32,13 +33,14 @@ export const getBooks: GraphQLFieldResolver<any, any, any> = async (
       }),
     );
 
-    return (result.Items ?? []) as Query["getBooks"];
+    return (result.Items ?? []) as GetBooksData["getBooks"];
   } catch (error) {
-    throw new GraphQLError("Failed to get books", {
-      extensions: {
-        code: "INTERNAL_SERVER_ERROR",
-        error,
-      },
+    if (error instanceof GraphQLError) {
+      throw error;
+    }
+
+    throw createAppError("Failed to get books", {
+      code: "INTERNAL_SERVER_ERROR",
     });
   }
 };

@@ -1,60 +1,61 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { ConfirmSignUp } from "./ConfirmSignUp";
+import { ErrorMessage } from "./ErrorMessage";
 import { Loader } from "./Loader";
 
 export const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
-  const { isAuthenticated, isLoading, login, userError, setUserError } =
-    useAuth();
-
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingCreds, setPendingCreds] = useState<{
     username: string;
     password: string;
   } | null>(null);
 
+  const { isAuthenticated, isLoading, login, userError, setUserError } =
+    useAuth();
+
+  useEffect(() => {
+    setUserError(null);
+  }, [setUserError]);
+
+  const handleOnSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!username.trim() || !password) {
+        setUserError("Username and password are required");
+        return;
+      }
+
+      try {
+        await login(username, password);
+      } catch (error: unknown) {
+        const cognitoError = error as { code?: string; message?: string };
+        if (cognitoError.code === "UserNotConfirmedException") {
+          setPendingCreds({ username, password });
+          setShowConfirm(true);
+          return;
+        }
+        console.error("Login failed:", cognitoError.message);
+        document.querySelector<HTMLInputElement>("#username")?.focus();
+      }
+    },
+    [username, password, login, setUserError],
+  );
+
   if (isAuthenticated) {
     return null;
   }
 
-  useEffect(() => {
-    setUserError(null);
-  }, []);
-
-  const handleOnSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await login(username, password);
-    } catch (error: unknown) {
-      const cognitoError = error as { code?: string; message?: string };
-      if (cognitoError.code === "UserNotConfirmedException") {
-        setPendingCreds({ username, password });
-        setShowConfirm(true);
-        return;
-      }
-      console.error("Login failed!!!");
-      document.querySelector<HTMLInputElement>("#username")?.focus();
-    }
-  };
-
-  const handleOnChangeUsername = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUsername(e.target.value);
-  };
-
-  const handleOnChangePassword = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
-  };
-
   if (showConfirm) {
     return (
       <div>
-        {isLoading ? <Loader /> : null}
+        {isLoading && <Loader />}
         <ConfirmSignUp
-          initialUsername={pendingCreds?.username || username}
+          initialUsername={pendingCreds?.username ?? username}
           onVerified={() => {
             setShowConfirm(false);
           }}
@@ -65,17 +66,22 @@ export const Login = () => {
 
   return (
     <div>
-      {isLoading ? <Loader /> : null}
+      {isLoading && <Loader />}
 
-      <form onSubmit={handleOnSubmit}>
-        <label htmlFor="username">Login</label>
+      <h1 className="title-text">Login</h1>
+
+      <form onSubmit={handleOnSubmit} noValidate>
+        <label htmlFor="username">Username</label>
         <input
           id="username"
           type="text"
           placeholder="Username"
           value={username}
+          autoComplete="username"
           className={userError ? "input-error" : ""}
-          onChange={handleOnChangeUsername}
+          onChange={(e) => setUsername(e.target.value)}
+          disabled={isLoading}
+          required
         />
 
         <label htmlFor="password">Password</label>
@@ -84,20 +90,20 @@ export const Login = () => {
           type="password"
           placeholder="Password"
           value={password}
+          autoComplete="current-password"
           className={userError ? "input-error" : ""}
-          onChange={handleOnChangePassword}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={isLoading}
+          required
         />
 
-        <button type="submit">Login</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? "Logging in..." : "Login"}
+        </button>
       </form>
 
-      {userError && (
-        <p aria-live="assertive" aria-atomic="true" className="error-message">
-          Invalid username or password. Please try again.
-        </p>
-      )}
+      {userError && <ErrorMessage message={userError} />}
 
-      {/* redirect to createUser page */}
       <div className="create-user-account-container">
         <Link to="/signup" className="link">
           Create Account

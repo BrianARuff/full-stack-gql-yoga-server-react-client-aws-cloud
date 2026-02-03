@@ -19,11 +19,7 @@ export type Scalars = {
 
 export type Query = {
   __typename?: "Query";
-  getBooks: Array<Book>;
-};
-
-export type QueryGetBooksArgs = {
-  id?: Maybe<Scalars["ID"]>;
+  getBooks: GetBooksData;
 };
 
 export type Mutation = {
@@ -43,6 +39,11 @@ export type MutationUpdateBookArgs = {
 
 export type MutationDeleteBookArgs = {
   input: DeleteBookInput;
+};
+
+export type GetBooksData = {
+  __typename?: "GetBooksData";
+  getBooks: Array<Book>;
 };
 
 export type Book = {

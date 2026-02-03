@@ -1,9 +1,10 @@
 import { gql } from "@apollo/client";
 import { useMutation } from "@apollo/client/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { ConfirmSignUp } from "./ConfirmSignUp";
+import { ErrorMessage } from "./ErrorMessage";
 import { Loader } from "./Loader";
 
 const CREATE_ADMIN_USER = gql`
@@ -11,6 +12,8 @@ const CREATE_ADMIN_USER = gql`
     createAdminUser(username: $username)
   }
 `;
+
+const PASSWORD_MIN_LENGTH = 8;
 
 export const SignUp = () => {
   const [username, setUsername] = useState("");
@@ -27,75 +30,93 @@ export const SignUp = () => {
   const navigate = useNavigate();
 
   const { signUp, userError } = useAuth();
-  const [createAdminUser] = useMutation(CREATE_ADMIN_USER, {
-    variables: { username },
-  });
+  const [createAdminUser] = useMutation(CREATE_ADMIN_USER);
 
-  const getGraphQLErrorMessage = (error: unknown) => {
-    // @ts-ignore
-    return error?.graphQLErrors?.[0]?.message || (error as Error)?.message;
+  const getGraphQLErrorMessage = (error: unknown): string => {
+    const gqlError = error as {
+      graphQLErrors?: Array<{ message: string }>;
+      message?: string;
+    };
+    return (
+      gqlError?.graphQLErrors?.[0]?.message ??
+      gqlError?.message ??
+      "Unknown error"
+    );
   };
 
-  const handleOnSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setValidationError("");
-    setSuccessMessage("");
-
-    if (isAdmin) {
-      setValidationError("");
+  const validateForm = useCallback((): string | null => {
+    if (!username.trim()) {
+      return "Username is required";
     }
-
+    if (!email.trim()) {
+      return "Email is required";
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return "Please enter a valid email address";
+    }
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      return `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
+    }
     if (password !== confirmPassword) {
-      setValidationError("Passwords do not match");
-      return;
+      return "Passwords do not match";
     }
+    return null;
+  }, [username, email, password, confirmPassword]);
 
-    if (password.length < 8) {
-      setValidationError("Password must be at least 8 characters");
-      return;
-    }
+  const handleOnSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setValidationError("");
+      setSuccessMessage("");
 
-    setIsLoading(true);
-    try {
-      await signUp(username, password, email);
-
-      if (isAdmin) {
-        try {
-          await createAdminUser({ variables: { username } });
-        } catch (adminError) {
-          const msg = getGraphQLErrorMessage(adminError);
-          setValidationError(
-            msg ||
-              "Admin request failed. Please contact an administrator to grant access.",
-          );
-        }
+      const error = validateForm();
+      if (error) {
+        setValidationError(error);
+        return;
       }
 
-      setSuccessMessage(
-        "Account created successfully! Please check your email to verify your account.",
-      );
-      setValidationError("");
-      setConfirmUsername(username);
-      setShowConfirm(true);
+      setIsLoading(true);
+      try {
+        await signUp(username, password, email);
 
-      setEmail("");
-      setPassword("");
-      setConfirmPassword("");
-    } catch (error) {
-      console.error("Signup failed:", error);
-      setValidationError("Failed to create account. Please try again.");
-      document.querySelector<HTMLInputElement>("#username")?.focus();
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        if (isAdmin) {
+          try {
+            await createAdminUser({ variables: { username } });
+          } catch (adminError) {
+            const msg = getGraphQLErrorMessage(adminError);
+            setValidationError(
+              msg ||
+                "Admin request failed. Please contact an administrator to grant access.",
+            );
+          }
+        }
+
+        setSuccessMessage(
+          "Account created successfully! Please check your email to verify your account.",
+        );
+        setValidationError("");
+        setConfirmUsername(username);
+        setShowConfirm(true);
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+      } catch (error) {
+        console.error("Signup failed:", error);
+        setValidationError("Failed to create account. Please try again.");
+        document.querySelector<HTMLInputElement>("#username")?.focus();
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [username, email, password, isAdmin, validateForm, signUp, createAdminUser],
+  );
 
   const displayError = validationError || userError;
 
   if (showConfirm) {
     return (
       <div>
-        {isLoading ? <Loader /> : null}
+        {isLoading && <Loader />}
         {successMessage && (
           <p aria-live="polite" className="success-message">
             {successMessage}
@@ -114,19 +135,21 @@ export const SignUp = () => {
 
   return (
     <div>
-      {isLoading ? <Loader /> : null}
+      {isLoading && <Loader />}
 
       <h1 className="title-text">Create Account</h1>
 
-      <form onSubmit={handleOnSubmit}>
+      <form onSubmit={handleOnSubmit} noValidate>
         <label htmlFor="username">Username</label>
         <input
           id="username"
           type="text"
           placeholder="Username"
           value={username}
+          autoComplete="username"
           className={displayError ? "input-error" : ""}
           onChange={(e) => setUsername(e.target.value)}
+          disabled={isLoading}
           required
         />
 
@@ -136,8 +159,10 @@ export const SignUp = () => {
           type="email"
           placeholder="Email"
           value={email}
+          autoComplete="email"
           className={displayError ? "input-error" : ""}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={isLoading}
           required
         />
 
@@ -147,8 +172,10 @@ export const SignUp = () => {
           type="password"
           placeholder="Password"
           value={password}
+          autoComplete="new-password"
           className={displayError ? "input-error" : ""}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={isLoading}
           required
         />
 
@@ -158,8 +185,10 @@ export const SignUp = () => {
           type="password"
           placeholder="Confirm Password"
           value={confirmPassword}
+          autoComplete="new-password"
           className={displayError ? "input-error" : ""}
           onChange={(e) => setConfirmPassword(e.target.value)}
+          disabled={isLoading}
           required
         />
 
@@ -168,6 +197,7 @@ export const SignUp = () => {
             type="checkbox"
             checked={isAdmin}
             onChange={(e) => setIsAdmin(e.target.checked)}
+            disabled={isLoading}
           />
           Request admin access
         </label>
@@ -175,16 +205,14 @@ export const SignUp = () => {
           Admin access must be granted by a server-side admin process.
         </p>
 
-        <button type="submit">Create Account</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? "Creating Account..." : "Create Account"}
+        </button>
       </form>
 
-      {displayError && (
-        <p aria-live="assertive" aria-atomic="true" className="error-message">
-          {displayError}
-        </p>
-      )}
+      {displayError && <ErrorMessage message={displayError} />}
 
-      {successMessage && (
+      {successMessage && !showConfirm && (
         <p aria-live="polite" className="success-message">
           {successMessage}
         </p>

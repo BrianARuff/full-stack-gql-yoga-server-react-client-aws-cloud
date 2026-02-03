@@ -5,6 +5,7 @@ import { env } from "./config.js";
 import { getDDBClient } from "./database";
 import { plugins } from "./plugins/index.js";
 import { schema } from "./schema";
+import "./tracing.js";
 
 export type Context = {
   request: Request;
@@ -23,7 +24,7 @@ const yoga = createYoga({
     };
   },
   plugins,
-  // graphiql: env.NODE_ENV !== 'production', // uncomment if you want to disable in prod
+  graphiql: process.env.NODE_ENV !== "production",
 });
 
 const server = createServer(yoga);
@@ -33,26 +34,3 @@ server.listen(env.PORT, () => {
     `GraphQL ready at http://localhost:${env.PORT}${yoga.graphqlEndpoint}`,
   );
 });
-
-// import hooks from "node:async_hooks"
-
-// const createTrace = hooks.createHook({
-//   init(asyncId, type, triggerAsyncId, resource) {
-//     const eid = hooks.executionAsyncId();
-//     console.log(`init: asyncId=${asyncId}, type=${type}, triggerAsyncId=${triggerAsyncId}, executionAsyncId=${eid}`);
-//   },
-//   before(asyncId) {
-//     const eid = hooks.executionAsyncId();
-//     console.log(`before: asyncId=${asyncId}, executionAsyncId=${eid}`);
-//   },
-//   after(asyncId) {
-//     const eid = hooks.executionAsyncId();
-//     console.log(`after: asyncId=${asyncId}, executionAsyncId=${eid}`);
-//   },
-//   destroy(asyncId) {
-//     const eid = hooks.executionAsyncId();
-//     console.log(`destroy: asyncId=${asyncId}, executionAsyncId=${eid}`);
-//   },
-// });
-
-// createTrace.enable();

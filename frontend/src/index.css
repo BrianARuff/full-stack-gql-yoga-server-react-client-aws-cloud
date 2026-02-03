@@ -31,6 +31,17 @@ button {
   font-size: 0.875rem;
 }
 
+.error-message-list {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+  color: red;
+}
+
+.error-message-list li {
+  margin: 0.25rem 0;
+}
+
 .loading-spinner {
   border: 4px solid rgba(0, 0, 0, 0.1);
   border-left-color: #4a90e2;
@@ -60,10 +71,18 @@ button {
   z-index: 1000;
 }
 
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
 .loading-message {
-  margin-top: 1rem;
+  margin: 0;
   font-size: 1.25rem;
   color: #333;
+  text-align: center;
 }
 
 .success-message {
@@ -132,4 +151,47 @@ button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.book-details {
+  margin: 0;
+}
+
+.book-details dd {
+  margin: 0;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.attributes-list {
+  margin: 0;
+}
+
+.attribute-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.attribute-row dt {
+  font-weight: bold;
+}
+
+.attribute-row dd {
+  margin: 0;
 }

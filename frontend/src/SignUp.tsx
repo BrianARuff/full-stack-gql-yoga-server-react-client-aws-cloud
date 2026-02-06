@@ -102,7 +102,10 @@ export const SignUp = () => {
         setConfirmPassword("");
       } catch (error) {
         console.error("Signup failed:", error);
-        setValidationError("Failed to create account. Please try again.");
+        const errMsg = getGraphQLErrorMessage(error);
+        setValidationError(
+          errMsg || "Failed to create account. Please try again.",
+        );
         document.querySelector<HTMLInputElement>("#username")?.focus();
       } finally {
         setIsLoading(false);

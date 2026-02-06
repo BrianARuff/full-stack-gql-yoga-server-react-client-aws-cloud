@@ -1,5 +1,5 @@
 import { createSchema } from "graphql-yoga";
-import { createAdminUser, createAdminUserTypeDefs } from "./auth";
+import { authSchemaTypeDefs, createAdminUser } from "./auth";
 import {
   bookSchemaTypeDefs,
   createBook,
@@ -10,7 +10,7 @@ import {
 import { getIntroductionMessage, helloWorldTypeDefs } from "./helloWorld";
 
 export const schema = createSchema({
-  typeDefs: [helloWorldTypeDefs, createAdminUserTypeDefs, bookSchemaTypeDefs],
+  typeDefs: [helloWorldTypeDefs, authSchemaTypeDefs, bookSchemaTypeDefs],
   resolvers: {
     Query: {
       getBooks,

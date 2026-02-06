@@ -14,7 +14,7 @@ export const BookArticles = () => {
   const { loading, error, data, refetch } = useQuery<GetBooksData>(
     GET_BOOKS_QUERY,
     {
-      fetchPolicy: "cache-and-network",
+      fetchPolicy: "no-cache",
       notifyOnNetworkStatusChange: true,
     },
   );

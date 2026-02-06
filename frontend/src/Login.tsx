@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { ConfirmSignUp } from "./ConfirmSignUp";
@@ -16,10 +16,6 @@ export const Login = () => {
 
   const { isAuthenticated, isLoading, login, userError, setUserError } =
     useAuth();
-
-  useEffect(() => {
-    setUserError(null);
-  }, [setUserError]);
 
   const handleOnSubmit = useCallback(
     async (e: React.FormEvent) => {

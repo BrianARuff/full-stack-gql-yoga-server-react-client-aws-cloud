@@ -1,8 +1,9 @@
 import { Plugin } from "graphql-yoga";
 import { Context } from "..";
+import { getRequiredEnv } from "../utils";
 
 export const useTracingExtensions = (): Plugin<Context> => {
-  const isProduction = process.env.NODE_ENV === "production";
+  const isProduction = getRequiredEnv("AGQL_BE_NODE_ENV") === "production";
 
   if (isProduction) {
     return {};

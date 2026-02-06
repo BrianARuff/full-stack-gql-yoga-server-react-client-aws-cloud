@@ -10,18 +10,20 @@ import { ApolloProvider } from "@apollo/client/react";
 import { CognitoUserPool } from "amazon-cognito-identity-js";
 import { AuthProvider, getJwtToken } from "./AuthContext.tsx";
 
-// @ts-ignore Polyfill for Buffer in the browser for AWS Cognito
 window.Buffer = Buffer;
 
 export const poolData = {
-  UserPoolId: import.meta.env.VITE_AWS_COGNITO_USER_POOL_ID,
-  ClientId: import.meta.env.VITE_AWS_COGNITO_CLIENT_ID,
+  UserPoolId: import.meta.env.AGQL_BE_AWS_COGNITO_USER_POOL_ID,
+  ClientId: import.meta.env.VITE_AGQL_FE_AWS_COGNITO_CLIENT_ID,
 };
 
 export const userPool = new CognitoUserPool(poolData);
 
 const httpLink = new HttpLink({
-  uri: import.meta.env.VITE_APP_GRAPHQL_API,
+  uri:
+    import.meta.env.AGQL_BE_NODE_ENV === "production"
+      ? import.meta.env.VITE_AGQL_FE_APP_GRAPHQL_API_PROD
+      : import.meta.env.VITE_AGQL_FE_APP_GRAPHQL_API,
 });
 
 const authLink = new SetContextLink(async (prevContext, _operation) => {

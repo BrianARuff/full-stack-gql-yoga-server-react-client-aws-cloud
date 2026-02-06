@@ -5,19 +5,19 @@ import {
 import { getRequiredEnv } from "../utils";
 
 const cognitoClient = new CognitoIdentityProviderClient({
-  region: getRequiredEnv("AWS_REGION"),
+  region: getRequiredEnv("AGQL_BE_AWS_REGION"),
   credentials: {
-    accessKeyId: getRequiredEnv("AWS_ACCESS_KEY_ID"),
-    secretAccessKey: getRequiredEnv("AWS_SECRET_ACCESS_KEY"),
+    accessKeyId: getRequiredEnv("AGQL_BE_AWS_ACCESS_KEY_ID"),
+    secretAccessKey: getRequiredEnv("AGQL_BE_AWS_SECRET_ACCESS_KEY"),
   },
 });
 
 export const addUserToAdminGroup = async (username: string) => {
   const res = await cognitoClient.send(
     new AdminAddUserToGroupCommand({
-      UserPoolId: getRequiredEnv("AWS_COGNITO_USER_POOL_ID"),
+      UserPoolId: getRequiredEnv("AGQL_BE_AWS_COGNITO_USER_POOL_ID"),
       Username: username,
-      GroupName: getRequiredEnv("AWS_COGNITO_USER_POOL_GROUP_NAME"),
+      GroupName: getRequiredEnv("AGQL_BE_AWS_COGNITO_USER_POOL_GROUP_NAME"),
     }),
   );
 

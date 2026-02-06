@@ -1,8 +1,9 @@
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { ConsoleSpanExporter } from "@opentelemetry/sdk-trace-node";
+import { getRequiredEnv } from "./utils";
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = getRequiredEnv("AGQL_BE_NODE_ENV") === "production";
 
 const sdk = new NodeSDK({
   serviceName: "graphql-yoga-server",

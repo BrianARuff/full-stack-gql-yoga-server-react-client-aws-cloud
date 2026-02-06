@@ -105,12 +105,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setIsLoading(false);
           reject(err);
         },
-        newPasswordRequired: (userAttributes) => {
-          console.log(
-            "New password required for user:",
-            username,
-            userAttributes,
-          );
+        newPasswordRequired: (_userAttributes) => {
           setPendingUser(cognitoUser);
           setRequiresNewPassword(true);
           setIsLoading(false);
@@ -177,8 +172,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         newPassword,
         {},
         {
-          onSuccess: (session) => {
-            console.log("Password change successful:", session);
+          onSuccess: (_session) => {
             setIsAuthenticated(true);
             setUser(pendingUser);
             setPendingUser(null);
@@ -205,12 +199,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         Pool: userPool,
       });
 
-      cognitoUser.confirmRegistration(code, true, (err, result) => {
+      cognitoUser.confirmRegistration(code, true, (err, _result) => {
         if (err) {
           setUserError(err.message || "Confirmation failed");
           reject(err);
         } else {
-          console.log("Confirmation successful:", result);
           setUserError(null);
           resolve();
         }
@@ -225,7 +218,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         Pool: userPool,
       });
 
-      cognitoUser.resendConfirmationCode((err, result) => {
+      cognitoUser.resendConfirmationCode((err, _result) => {
         if (err) {
           console.error("Failed to resend code:", err);
           setUserError(err.message || "Failed to resend code");
@@ -233,7 +226,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           return;
         }
 
-        console.log("Code resent:", result);
         setUserError(null);
         resolve();
       });

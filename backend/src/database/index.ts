@@ -5,10 +5,12 @@ import { getRequiredEnv } from "../utils";
 
 export const getDDBClient = () => {
   const ddbClient = new DynamoDBClient({
-    region: getRequiredEnv("AWS_REGION") as string,
+    region: getRequiredEnv("AGQL_BE_AWS_REGION") as string,
     credentials: {
-      accessKeyId: getRequiredEnv("AWS_ACCESS_KEY_ID") as string,
-      secretAccessKey: getRequiredEnv("AWS_SECRET_ACCESS_KEY") as string,
+      accessKeyId: getRequiredEnv("AGQL_BE_AWS_ACCESS_KEY_ID") as string,
+      secretAccessKey: getRequiredEnv(
+        "AGQL_BE_AWS_SECRET_ACCESS_KEY",
+      ) as string,
     },
   });
 
@@ -18,5 +20,5 @@ export const getDDBClient = () => {
 };
 
 export const DDB_TABLE_NAMES = {
-  BOOKS_TABLE: getRequiredEnv("AWS_DDB_BOOKS_TABLE") as string,
+  BOOKS_TABLE: getRequiredEnv("AGQL_BE_AWS_DDB_BOOKS_TABLE") as string,
 };

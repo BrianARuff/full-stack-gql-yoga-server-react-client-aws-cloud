@@ -40,7 +40,9 @@ export const requireAdminGroup = (token: string): CognitoToken => {
   }
 
   const userGroups = decodedToken["cognito:groups"] || [];
-  const requiredGroup = getRequiredEnv("AWS_COGNITO_USER_POOL_GROUP_NAME");
+  const requiredGroup = getRequiredEnv(
+    "AGQL_BE_AWS_COGNITO_USER_POOL_GROUP_NAME",
+  );
   const isAdmin = userGroups.includes(requiredGroup);
 
   if (!isAdmin) {
